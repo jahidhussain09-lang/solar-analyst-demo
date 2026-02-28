@@ -1,0 +1,1562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JAHID NAVIGATOR | Universal v7.1 (Aster Engine)</title>
+    
+    <!-- LIBRARIES -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- PHASE 04: ULTRA REACTOR THEME --- */
+        :root {
+            --bg-deep: #030508;
+            --bg-panel: #0a0f1c;
+            --color-primary: #00f3ff; /* Cyan */
+            --color-secondary: #7000ff; /* Neon Purple */
+            --color-success: #00ff9d; /* Neon Green */
+            --color-warning: #ffb800; /* Amber */
+            --color-danger: #ff003c; /* Red */
+            --glass-border: rgba(0, 243, 255, 0.2);
+            --glass-bg: rgba(10, 15, 28, 0.30);
+            --text-main: #e2e8f0;
+        }
+
+        body { 
+            font-family: 'Rajdhani', sans-serif; 
+            background-color: var(--bg-deep); 
+            color: var(--text-main); 
+            background-image: 
+                radial-gradient(circle at 50% 0%, #111827 0%, transparent 60%),
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 100% 100%, 40px 40px, 40px 40px;
+            transition: background-color 0.5s ease, color 0.5s ease;
+            overflow-x: hidden;
+        }
+
+        /* --- PERFORMANCE MODE CLASSES --- */
+        .turbo-mode .reactor-container,
+        .turbo-mode .hex-bg,
+        .turbo-mode .particle {
+            display: none !important;
+            animation: none !important;
+        }
+        .turbo-mode body {
+            background-image: none !important;
+            background-color: #050505;
+        }
+
+        .hidden { display: none !important; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        
+        .hud-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(4px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.5s ease, background-color 0.5s ease;
+            transform: translateZ(0);
+        }
+        
+        .hud-card::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 10px; height: 10px;
+            border-top: 2px solid var(--color-primary); border-left: 2px solid var(--color-primary);
+        }
+        .hud-card::after {
+            content: ''; position: absolute; bottom: 0; right: 0; width: 10px; height: 10px;
+            border-bottom: 2px solid var(--color-primary); border-right: 2px solid var(--color-primary);
+        }
+
+        .nav-tab {
+            cursor: pointer; border-bottom: 2px solid transparent; opacity: 0.5; transition: all 0.3s;
+            white-space: nowrap;
+        }
+        .nav-tab:hover { opacity: 0.8; color: var(--color-primary); }
+        .nav-tab.active {
+            border-color: var(--color-primary); opacity: 1; color: var(--color-primary); text-shadow: 0 0 10px var(--color-primary);
+        }
+
+        /* --- HYPER-REALISTIC STARK ARC REACTOR --- */
+        /* Precision Glow & Accurate Color Grading (Adaptive Theme) */
+        .reactor-container {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 80vmin; height: 80vmin; z-index: 1; pointer-events: none; opacity: 0.35;
+            transition: opacity 0.5s ease; will-change: transform;
+            display: flex; justify-content: center; align-items: center;
+            /* Tighter, more realistic light falloff mapping to theme variables */
+            filter: drop-shadow(0 0 15px color-mix(in srgb, var(--color-primary) 80%, transparent)) drop-shadow(0 0 50px color-mix(in srgb, var(--color-secondary) 40%, transparent));
+        }
+
+        .reactor-component {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            border-radius: 50%; box-sizing: border-box;
+        }
+
+        /* 1. OUTER GLOW: Magnetic Containment Field */
+        .rc-outer-glow {
+            width: 100%; height: 100%; border: none; box-shadow: none; opacity: 1;
+            background: 
+                conic-gradient(from 0deg, transparent 0%, rgba(255,255,255,0.7) 2%, var(--color-primary) 4%, transparent 12%, transparent 48%, var(--color-secondary) 50%, rgba(255,255,255,0.7) 52%, transparent 54%),
+                radial-gradient(circle, transparent 38%, color-mix(in srgb, var(--color-primary) 15%, transparent) 44%, color-mix(in srgb, var(--color-secondary) 5%, transparent) 50%, transparent 53%);
+            mix-blend-mode: screen;
+            animation: base-spin-cw 12s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        .rc-outer-glow::before {
+            content: ''; position: absolute; inset: -15%; border-radius: 50%;
+            background: radial-gradient(circle, transparent 40%, var(--color-primary) 50%, transparent 60%);
+            opacity: 0.25; filter: blur(12px);
+            animation: pseudo-pulse 3s ease-in-out infinite alternate;
+        }
+        .rc-outer-glow::after {
+            content: ''; position: absolute; inset: 2%; border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: repeating-conic-gradient(transparent 0deg, var(--color-primary) 1deg, transparent 3deg);
+            mask: radial-gradient(transparent 68%, black 69%, black 71%, transparent 72%);
+            -webkit-mask: radial-gradient(transparent 68%, black 69%, black 71%, transparent 72%);
+            animation: pseudo-spin-ccw 40s linear infinite;
+        }
+
+        /* 2. HOUSING: Deep Machined Tungsten */
+        .rc-housing {
+            width: 88%; height: 88%; border: none; opacity: 1;
+            background: 
+                radial-gradient(circle at 50% 0%, rgba(255,255,255,0.15) 0%, transparent 60%),
+                repeating-conic-gradient(from 0deg, #0a0a0a 0deg, #252525 3deg, #3d3d3d 5deg, #252525 7deg, #0a0a0a 10deg, #000 10deg, #000 12deg);
+            mask: radial-gradient(transparent 60%, black 61%, black 69%, transparent 70%);
+            -webkit-mask: radial-gradient(transparent 60%, black 61%, black 69%, transparent 70%);
+            box-shadow: inset 0 0 25px #000, 0 0 15px var(--color-primary);
+            animation: base-spin-cw 180s linear infinite;
+        }
+        .rc-housing::before {
+            content: ''; position: absolute; inset: 0; border-radius: 50%;
+            background: repeating-conic-gradient(from 0deg, var(--color-primary) 0deg, #fff 1deg, var(--color-primary) 2deg, transparent 5deg, transparent 15deg);
+            mask: radial-gradient(transparent 64%, black 64.5%, black 65.5%, transparent 66%);
+            -webkit-mask: radial-gradient(transparent 64%, black 64.5%, black 65.5%, transparent 66%);
+            box-shadow: 0 0 15px var(--color-primary);
+        }
+        .rc-housing::after {
+            content: ''; position: absolute; inset: 0; border-radius: 50%;
+            background: conic-gradient(from 0deg, #000, #333, #000, #333, #000);
+            mask: radial-gradient(transparent 69%, black 69.5%, black 70.5%, transparent 71%);
+            -webkit-mask: radial-gradient(transparent 69%, black 69.5%, black 70.5%, transparent 71%);
+            animation: pseudo-spin-ccw 90s linear infinite;
+        }
+
+        /* 3. COILS: Palladium Inner Ring & Threads */
+        .rc-coils {
+            width: 72%; height: 72%; border: none; opacity: 1;
+            background: repeating-conic-gradient(
+                from 0deg,
+                transparent 0deg, transparent 5deg,
+                #050505 5.1deg, #777 6deg, #ccc 7deg, #777 8deg, #050505 8.9deg,
+                transparent 9deg, transparent 36deg
+            );
+            mask: radial-gradient(transparent 52%, black 53%, black 67%, transparent 68%);
+            -webkit-mask: radial-gradient(transparent 52%, black 53%, black 67%, transparent 68%);
+            animation: base-spin-ccw 45s cubic-bezier(0.5, 0.1, 0.5, 0.9) infinite;
+            filter: drop-shadow(0 0 6px rgba(0,0,0,0.9));
+        }
+        .rc-coils::before {
+            content: ''; position: absolute; inset: 0; border-radius: 50%;
+            background: repeating-conic-gradient(
+                from 0deg,
+                var(--color-secondary) 0deg, #ffffff 0.5deg, var(--color-primary) 1deg,
+                transparent 2deg, transparent 36deg
+            );
+            mask: radial-gradient(transparent 56%, black 58%, black 62%, transparent 64%);
+            -webkit-mask: radial-gradient(transparent 56%, black 58%, black 62%, transparent 64%);
+            opacity: 0.95;
+            box-shadow: 0 0 15px var(--color-primary), inset 0 0 15px var(--color-secondary);
+            animation: pseudo-spin-cw 8s linear infinite;
+        }
+        .rc-coils::after {
+            content: ''; position: absolute; inset: 12%; border-radius: 50%;
+            border: 2px dashed rgba(255,255,255,0.85);
+            box-shadow: 0 0 15px var(--color-secondary), inset 0 0 15px var(--color-primary);
+            animation: pseudo-spin-ccw 12s linear infinite;
+        }
+
+        /* 4. CORE: Stable Blinding Star (Precise Gradients) */
+        .rc-core {
+            width: 42%; height: 42%; border-radius: 50%; opacity: 1; border: none;
+            /* Accurate heat map mapped dynamically to themes */
+            background: radial-gradient(circle, #ffffff 0%, color-mix(in srgb, var(--color-primary) 20%, white) 12%, var(--color-primary) 38%, var(--color-secondary) 65%, transparent 82%);
+            box-shadow: 
+                0 0 15px #ffffff, 
+                0 0 35px var(--color-primary), 
+                0 0 90px var(--color-secondary), 
+                inset 0 0 15px #ffffff,
+                inset 0 0 35px var(--color-primary);
+            animation: base-core-beat 1.8s ease-in-out infinite alternate;
+        }
+        .rc-core::before {
+            content: ''; position: absolute; inset: -5%; border-radius: 50%;
+            background: 
+                linear-gradient(60deg, transparent 48.5%, rgba(0,0,0,0.85) 49.2%, rgba(0,0,0,0.85) 50.8%, transparent 51.5%),
+                linear-gradient(-60deg, transparent 48.5%, rgba(0,0,0,0.85) 49.2%, rgba(0,0,0,0.85) 50.8%, transparent 51.5%),
+                linear-gradient(0deg, transparent 48.5%, rgba(0,0,0,0.85) 49.2%, rgba(0,0,0,0.85) 50.8%, transparent 51.5%);
+            mix-blend-mode: overlay;
+            animation: pseudo-spin-cw 25s linear infinite;
+        }
+        .rc-core::after {
+            content: ''; position: absolute; inset: 25%; border-radius: 50%;
+            background: conic-gradient(from 0deg, #ffffff, var(--color-primary), #ffffff, var(--color-secondary), #ffffff);
+            filter: blur(4px);
+            mix-blend-mode: hard-light;
+            /* Smoothed out rotation for a contained plasma feel */
+            animation: pseudo-spark 3.5s linear infinite;
+        }
+
+        /* --- HYPER-REALISTIC KEYFRAMES --- */
+        @keyframes base-spin-cw { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
+        @keyframes base-spin-ccw { from { transform: translate(-50%, -50%) rotate(360deg); } to { transform: translate(-50%, -50%) rotate(0deg); } }
+        @keyframes base-core-beat { 0% { transform: translate(-50%, -50%) scale(0.98); filter: brightness(0.95); } 100% { transform: translate(-50%, -50%) scale(1.02); filter: brightness(1.2); } }
+
+        @keyframes pseudo-spin-cw { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes pseudo-spin-ccw { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
+        @keyframes pseudo-pulse { 0% { transform: scale(0.95); opacity: 0.2; } 100% { transform: scale(1.05); opacity: 0.35; } }
+        
+        /* Controlled, highly realistic plasma spark */
+        @keyframes pseudo-spark { 
+            0% { transform: rotate(0deg) scale(1); opacity: 0.85; filter: blur(4px) hue-rotate(0deg); } 
+            50% { transform: rotate(180deg) scale(1.05); opacity: 1; filter: blur(5px) hue-rotate(15deg); } 
+            100% { transform: rotate(360deg) scale(1); opacity: 0.85; filter: blur(4px) hue-rotate(0deg); } 
+        }
+
+        /* Updated Input Styles to exclude specific overrides */
+        select:not(.param-select), input:not(.segment-input):not(.toggle-input) { background-color: rgba(0, 0, 0, 0.5) !important; border: 1px solid #334155 !important; color: var(--color-primary) !important; font-family: 'JetBrains Mono', monospace; outline: none; }
+        select:focus, input:focus { border-color: var(--color-primary) !important; box-shadow: 0 0 10px var(--color-primary); }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-deep); }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--color-primary); }
+
+        .chart-wrapper { position: relative; width: 100%; height: 320px; }
+        .chart-tools { position: absolute; top: 5px; right: 5px; z-index: 10; display: flex; gap: 6px; align-items: center; opacity: 0.9; transition: opacity 0.3s; }
+        .chart-wrapper:hover .chart-tools { opacity: 1; }
+        
+        .chart-tool-btn { background: #000; color: var(--color-primary); border: 1px solid var(--glass-border); padding: 2px 6px; font-size: 9px; cursor: pointer; border-radius: 2px; text-transform: uppercase; font-weight: bold; }
+        .chart-tool-btn:hover { background: var(--color-primary); color: #000; }
+
+        /* SEGMENT CONTROLLER (SLIDE SWITCH) */
+        .segment-control { display: inline-flex; background: rgba(0,0,0,0.8); border: 1px solid var(--glass-border); border-radius: 4px; padding: 2px; }
+        .segment-input { display: none; }
+        .segment-label { 
+            cursor: pointer; padding: 2px 8px; font-size: 9px; color: #666; 
+            border-radius: 2px; transition: all 0.2s; font-weight: bold; 
+            text-transform: uppercase; font-family: 'JetBrains Mono', monospace;
+        }
+        .segment-input:checked + .segment-label { background: var(--color-primary); color: #000; box-shadow: 0 0 5px var(--color-primary); }
+
+        /* MULTI SELECT DROPDOWN */
+        .multi-select-container { position: relative; }
+        .multi-select-btn {
+            background: rgba(0,0,0,0.8); border: 1px solid var(--glass-border); 
+            color: var(--color-primary); font-size: 9px; padding: 2px 8px; 
+            border-radius: 2px; font-family: 'JetBrains Mono', monospace; 
+            text-transform: uppercase; cursor: pointer; display: flex; align-items: center; gap: 4px;
+        }
+        .multi-select-btn:hover { border-color: #fff; }
+        .multi-select-menu {
+            position: absolute; top: 100%; right: 0; margin-top: 4px;
+            background: #0a0f1c; border: 1px solid var(--glass-border);
+            border-radius: 4px; padding: 6px; z-index: 50;
+            min-width: 120px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            display: none; flex-direction: column; gap: 4px;
+        }
+        .multi-select-menu.show { display: flex; }
+        .multi-select-item {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 10px; color: #ccc; cursor: pointer;
+            font-family: 'JetBrains Mono', monospace; padding: 2px;
+        }
+        .multi-select-item:hover { color: var(--color-primary); }
+        .multi-select-item input { margin: 0; cursor: pointer; accent-color: var(--color-primary); }
+
+        .data-table-view { width: 100%; height: 100%; overflow: auto; background: rgba(5,5,5,0.95); padding: 5px; border-radius: 4px; }
+        .data-table-view table { width: 100%; font-size: 11px; color: #ccc; border-collapse: collapse; font-family: 'JetBrains Mono', monospace; }
+        .data-table-view th { background: rgba(0, 243, 255, 0.1); color: var(--color-primary); position: sticky; top: 0; }
+        .data-table-view th, .data-table-view td { border: 1px solid #333; padding: 6px; text-align: center; }
+        .data-table-view tr:hover { background: rgba(255,255,255,0.05); }
+
+        /* HEATMAP STYLES */
+        .heatmap-container { display: flex; flex-direction: column; gap: 2px; }
+        .heatmap-row { display: flex; gap: 2px; height: 20px; }
+        .heatmap-cell { flex: 1; border-radius: 1px; transition: opacity 0.2s; position: relative; }
+        .heatmap-cell:hover { opacity: 0.5; cursor: crosshair; }
+        .heatmap-cell:hover::after {
+            content: attr(data-val);
+            position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+            background: black; color: white; padding: 2px 4px; font-size: 10px;
+            border: 1px solid var(--color-primary); z-index: 50; white-space: nowrap; pointer-events: none;
+        }
+
+        #chart-modal { background: rgba(0,0,0,0.95); backdrop-filter: blur(10px); }
+        
+        #loader-overlay { 
+            position: fixed; inset: 0; 
+            background: linear-gradient(135deg, #050505 0%, #0a0f1c 100%);
+            z-index: 9999; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+        }
+        
+        .progress-bar-container {
+            width: 400px; height: 10px; background: #111; 
+            border: 1px solid var(--color-primary); 
+            border-radius: 5px; overflow: hidden; 
+            position: relative; z-index: 20;
+            box-shadow: 0 0 15px var(--color-primary);
+        }
+        .progress-bar { 
+            height: 100%; 
+            background: repeating-linear-gradient(45deg, var(--color-primary), var(--color-primary) 10px, var(--color-secondary) 10px, var(--color-secondary) 20px);
+            width: 0%; transition: width 0.2s; 
+        }
+        
+        .glitch-text { 
+            font-size: 2.5rem; font-weight: 800; letter-spacing: 0.2em; 
+            color: var(--color-primary); text-shadow: 0 0 20px var(--color-primary);
+            animation: text-flicker 3s infinite alternate;
+            position: relative; z-index: 20;
+        }
+        @keyframes text-flicker { 0% { opacity: 1; } 95% { opacity: 1; } 96% { opacity: 0.5; } 97% { opacity: 1; } 98% { opacity: 0.2; } 99% { opacity: 1; } }
+
+        /* --- NEW: TOGGLE SWITCH (TURBO) --- */
+        .toggle-switch { position: relative; display: inline-block; width: 44px; height: 22px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; transition: .4s; border-radius: 22px; border: 1px solid #555; }
+        .toggle-slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 2px; background-color: #888; transition: .4s; border-radius: 50%; }
+        input:checked + .toggle-slider { background-color: var(--color-success); border-color: var(--color-success); }
+        input:checked + .toggle-slider:before { transform: translateX(22px); background-color: #000; box-shadow: 0 0 5px #fff; }
+
+        /* --- NEW: TOAST NOTIFICATION --- */
+        #toast-notification {
+            visibility: hidden; min-width: 250px; background-color: rgba(10, 15, 28, 0.95); 
+            color: var(--color-primary); text-align: center; border-radius: 4px; padding: 12px 20px; 
+            position: fixed; z-index: 10000; left: 50%; transform: translateX(-50%); bottom: 30px; 
+            font-size: 12px; font-family: 'JetBrains Mono', monospace; text-transform: uppercase;
+            border: 1px solid var(--glass-border); box-shadow: 0 0 15px var(--color-primary);
+            opacity: 0; transition: opacity 0.3s, bottom 0.3s;
+        }
+        #toast-notification.show { visibility: visible; opacity: 1; bottom: 50px; }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen" onclick="closeAllDropdowns(event)">
+
+<!-- MODAL FOR FULLSCREEN CHART -->
+<div id="chart-modal" class="fixed inset-0 z-[200] hidden flex flex-col p-6">
+    <div class="flex justify-between items-center mb-4 border-b border-white/20 pb-2">
+        <h2 class="text-xl font-bold text-white tracking-widest uppercase flex items-center gap-2">
+            <span class="w-2 h-6 bg-cyan-400"></span> Detailed Analysis View
+        </h2>
+        <button onclick="closeModal()" class="text-red-500 hover:text-red-400 font-bold font-mono tracking-widest text-lg">[CLOSE LINK]</button>
+    </div>
+    <div class="flex-grow relative bg-slate-900/50 border border-white/10 rounded-xl p-4 overflow-hidden">
+        <canvas id="modalCanvas"></canvas>
+        <button onclick="App.modalChart.resetZoom()" class="absolute top-6 right-6 bg-slate-800 text-cyan-400 text-xs px-3 py-1 rounded border border-cyan-500/30 hover:bg-cyan-900/30">RESET ZOOM</button>
+    </div>
+    <div class="mt-2 text-center text-xs text-slate-500 font-mono">Use Mouse Wheel to Zoom • Click & Drag to Pan</div>
+</div>
+
+<!-- PHASE 04 ULTRA REACTOR -->
+<div class="reactor-container">
+    <div class="reactor-component rc-outer-glow"></div>
+    <div class="reactor-component rc-housing"></div>
+    <div class="reactor-component rc-coils"></div>
+    <div class="reactor-component rc-core"></div>
+</div>
+
+<!-- TOAST -->
+<div id="toast-notification">SYSTEM MESSAGE</div>
+
+<!-- LOADING SCREEN -->
+<div id="loader-overlay" class="hidden">
+    <div class="glitch-text mb-8">SYSTEM BOOT SEQUENCE</div>
+    <div class="progress-bar-container">
+        <div id="upload-progress" class="progress-bar"></div>
+    </div>
+    <div id="upload-text" class="text-sm text-cyan-400 mt-4 font-mono uppercase tracking-widest relative z-20">Initializing Neural Link...</div>
+</div>
+
+<!-- HEADER -->
+<header class="bg-slate-900/60 backdrop-blur-md border-b border-white/10 p-2 sticky top-0 z-50 shadow-[0_0_20px_rgba(0,0,0,0.8)]">
+    <div class="container mx-auto flex flex-col gap-2">
+        <div class="flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center gap-4 group flex-shrink-0">
+                <div class="relative w-10 h-10 flex items-center justify-center border border-white/20 rounded bg-black/30 group-hover:border-white/40 transition-colors" style="border-color: var(--color-primary);">
+                    <div class="absolute inset-0 blur opacity-20 rounded-full animate-pulse" style="background-color: var(--color-primary);"></div>
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" style="color: var(--color-primary);"><path d="M12 2L2 19h20L12 2zm0 3.8l6.3 10.7H5.7L12 5.8zM7 14h10v2H7v-2z"/></svg>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-white tracking-widest uppercase hidden md:block">Solar<span class="text-theme-primary" style="color: var(--color-primary);">Analyst</span></h1>
+                    <p class="text-[10px] font-mono tracking-[0.2em] uppercase" style="color: var(--color-primary); opacity: 0.7;">Jahid Navigator // v7.1 // Turbo</p>
+                </div>
+            </div>
+            
+            <div class="flex gap-4 items-center flex-shrink-0">
+                <!-- TURBO TOGGLE -->
+                <div class="flex items-center gap-2">
+                    <span class="text-[9px] font-bold text-slate-400 uppercase">Turbo</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="turbo-toggle" class="toggle-input" onchange="toggleTurbo()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <button onclick="resetSystem()" class="h-8 px-2 flex items-center gap-1 bg-slate-800 text-[9px] font-bold text-slate-300 border border-slate-600 rounded hover:bg-slate-700 transition-all uppercase" title="Clear Data">
+                   RESET
+                </button>
+
+                <select onchange="changeTheme(this.value)" class="h-8 px-2 text-[10px] uppercase font-bold bg-black/50 border border-slate-600 rounded text-slate-300">
+                    <option value="jarvis">JARVIS</option><option value="veronica">VERONICA</option><option value="warmachine">WAR MACHINE</option>
+                </select>
+                <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" multiple class="hidden" onchange="DataEngine.ingest(this)">
+                <button onclick="document.getElementById('fileInput').click()" class="h-8 w-8 flex items-center justify-center bg-white/5 hover:bg-white/10 text-cyan-400 border border-cyan-500/50 rounded hover:shadow-[0_0_15px_var(--color-primary)] transition-all" title="Inject Data">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="flex bg-black/40 rounded-lg p-1 border border-white/10 overflow-x-auto">
+            <button onclick="switchDashboard('inverter')" id="tab-inverter" class="nav-tab active flex-1 px-3 py-1 text-xs font-bold uppercase tracking-widest text-slate-400">Main HUD</button>
+            <button onclick="switchDashboard('inv-matrix')" id="tab-inv-matrix" class="nav-tab flex-1 px-3 py-1 text-xs font-bold uppercase tracking-widest text-slate-400">Inv Matrix</button>
+            <button onclick="switchDashboard('transformer')" id="tab-transformer" class="nav-tab flex-1 px-3 py-1 text-xs font-bold uppercase tracking-widest text-slate-400">Transformer</button>
+            <button onclick="switchDashboard('meter')" id="tab-meter" class="nav-tab flex-1 px-3 py-1 text-xs font-bold uppercase tracking-widest text-slate-400">Meter & Grid</button>
+            <button onclick="switchDashboard('fault')" id="tab-fault" class="nav-tab flex-1 px-3 py-1 text-xs font-bold uppercase tracking-widest text-slate-400">Fault Matrix</button>
+            <button onclick="switchDashboard('comparison')" id="tab-comparison" class="nav-tab flex-1 px-3 py-1 text-xs font-bold uppercase tracking-widest text-slate-400">Plant Comp</button>
+            <button onclick="switchDashboard('year')" id="tab-year" class="nav-tab flex-1 px-3 py-1 text-xs font-bold uppercase tracking-widest text-slate-400">Yearly</button>
+            <button onclick="switchDashboard('report')" id="tab-report" class="nav-tab flex-1 px-3 py-1 text-xs font-bold uppercase tracking-widest text-slate-400 text-yellow-500">Reports</button>
+        </div>
+    </div>
+</header>
+
+<main class="container mx-auto p-4 space-y-6 flex-grow relative z-10" id="dashboard-capture">
+    
+    <!-- CONTROL PANEL -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 hud-card rounded-xl p-4 items-end">
+        <div>
+            <div class="flex justify-between items-baseline mb-1"><label class="text-[10px] font-bold uppercase tracking-widest text-slate-400">System Select</label><div class="flex gap-2 text-[10px] font-mono"><span class="text-cyan-300">DC: <b id="plantDC">--</b></span><span class="text-emerald-300">AC: <b id="plantAC">--</b></span></div></div>
+            <select id="plantSelector" onchange="runAnalysisPipeline()" class="w-full text-xs rounded px-3 py-2 text-white uppercase"><option>WAITING FOR INJECTION...</option></select>
+        </div>
+        <div><label class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Start Cycle</label><input type="date" id="dateStart" onchange="runAnalysisPipeline()" class="w-full mt-1 rounded px-3 py-2 text-xs text-white"></div>
+        <div><label class="text-[10px] font-bold uppercase tracking-widest text-slate-400">End Cycle</label><input type="date" id="dateEnd" onchange="runAnalysisPipeline()" class="w-full mt-1 rounded px-3 py-2 text-xs text-white"></div>
+        <div>
+            <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Aggregation Level</label>
+            <select id="timeLevel" onchange="runAnalysisPipeline()" class="w-full mt-1 rounded px-3 py-2 text-xs text-white">
+                <option value="1min">1 Minute</option>
+                <option value="5min">5 Minute</option>
+                <option value="15min">15 Minute</option>
+                <option value="30min">30 Minute</option>
+                <option value="hour">Hourly</option>
+                <option value="day">Daily</option>
+                <option value="month" selected>Monthly Sum</option>
+                <option value="year">Yearly Sum</option>
+            </select>
+        </div>
+    </div>
+    
+    <!-- AI COMMAND NEXUS -->
+    <div class="hud-card p-4 rounded-xl flex flex-col gap-3 border-l-4 border-l-purple-500">
+        <div class="flex flex-wrap gap-2 items-center">
+            <div class="text-[10px] font-bold uppercase tracking-widest text-purple-400 whitespace-nowrap">AI COMMAND NEXUS</div>
+            <input type="password" id="apiKeyInput" placeholder="Enter API Key" class="h-8 w-32 px-3 text-[10px] bg-black/50 border border-slate-700 rounded focus:w-48 transition-all">
+            <div class="flex-grow flex h-8">
+                <input type="text" id="aiInput" placeholder="Enter query for comprehensive analysis (e.g., 'Analyze performance trends from start to end')..." class="flex-grow rounded-l border border-slate-600 border-r-0 bg-black/60 px-3 text-xs font-mono text-cyan-300 placeholder-slate-500 focus:bg-black/80 focus:border-cyan-500 outline-none transition-all">
+                <button onclick="runHybridAnalysis()" class="px-4 bg-purple-900/50 border border-purple-500/50 rounded-r text-[10px] font-bold text-purple-100 uppercase hover:bg-purple-800 transition-all flex items-center gap-2">
+                    INITIATE
+                </button>
+            </div>
+        </div>
+        <div id="aiOutput" class="hidden text-xs font-mono text-cyan-200 mt-2 p-2 bg-black/30 rounded border border-white/5"></div>
+    </div>
+
+    <div id="dashboard-content">
+        <!-- PAGE 1: INVERTER HUD -->
+        <div id="view-inverter" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                <div class="hud-card p-4 rounded-xl flex flex-col items-center justify-between">
+                    <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Performance (PR)</h3>
+                    <div class="relative h-24 w-full flex justify-center"><canvas id="gaugePR"></canvas></div>
+                    <div class="text-center relative z-10 -mt-2"><span id="valPR" class="text-2xl font-bold font-mono text-white">--</span></div>
+                    <div id="healthScore" class="w-full text-center text-[10px] font-mono mt-1 text-slate-500 border-t border-slate-700 pt-1">Health: --%</div>
+                </div>
+                
+                <div class="hud-card p-4 rounded-xl flex flex-col items-center justify-between">
+                    <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">DC CUF</h3>
+                    <div class="relative h-24 w-full flex justify-center"><canvas id="gaugeDCCUF"></canvas></div>
+                    <div class="text-center relative z-10 -mt-2"><span id="valDCCUF" class="text-2xl font-bold text-cyan-300 font-mono">--</span></div>
+                </div>
+
+                <div class="hud-card p-4 rounded-xl flex flex-col items-center justify-between">
+                    <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">AC CUF</h3>
+                    <div class="relative h-24 w-full flex justify-center"><canvas id="gaugeACCUF"></canvas></div>
+                    <div class="text-center relative z-10 -mt-2"><span id="valACCUF" class="text-2xl font-bold text-emerald-300 font-mono">--</span></div>
+                </div>
+
+                <div class="hud-card p-4 rounded-xl flex flex-col justify-center border-l-2 border-l-green-500">
+                    <div class="flex justify-between items-end"><h3 class="text-[10px] font-bold text-slate-400 uppercase">Plant Availability</h3><span id="valPlantAvail" class="text-xl font-bold text-green-400 font-mono">--</span></div>
+                    <div class="w-full bg-slate-800 h-1 mt-2 mb-2"><div id="barPlantAvail" class="bg-green-500 h-full w-0"></div></div>
+                    <div class="text-[9px] text-slate-500 text-right">Breakdown Loss: <span id="valPlantLoss" class="text-white">0</span> kWh</div>
+                </div>
+
+                <div class="hud-card p-4 rounded-xl flex flex-col justify-center border-l-2 border-l-blue-500">
+                    <div class="flex justify-between items-end"><h3 class="text-[10px] font-bold text-slate-400 uppercase">Grid Availability</h3><span id="valGridAvail" class="text-xl font-bold text-blue-400 font-mono">--</span></div>
+                    <div class="w-full bg-slate-800 h-1 mt-2 mb-2"><div id="barGridAvail" class="bg-blue-500 h-full w-0"></div></div>
+                    <div class="text-[9px] text-slate-500 text-right">Grid Loss: <span id="valGridLoss" class="text-white">0</span> kWh</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                 <div class="hud-card p-3 rounded-xl flex flex-col justify-center border-b-2 border-b-purple-500">
+                    <h3 class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Specific Yield / Day</h3>
+                    <div class="flex items-baseline gap-2">
+                        <span id="valSpecYield" class="text-2xl font-bold text-purple-300 font-mono">--</span>
+                        <span class="text-[10px] text-slate-500 font-mono">kWh/kWp/Day</span>
+                    </div>
+                </div>
+
+                <div class="hud-card p-3 rounded-xl flex flex-col justify-center border-b-2 border-b-yellow-500">
+                    <h3 class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Plant Timing (Start / Stop)</h3>
+                    <div class="flex justify-between items-center">
+                        <div class="text-center">
+                             <span class="text-[9px] text-slate-500 block">START</span>
+                             <span id="valStartTime" class="text-lg font-bold text-yellow-300 font-mono">--:--</span>
+                        </div>
+                        <div class="h-8 w-[1px] bg-white/10"></div>
+                        <div class="text-center">
+                             <span class="text-[9px] text-slate-500 block">STOP</span>
+                             <span id="valStopTime" class="text-lg font-bold text-yellow-300 font-mono">--:--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hud-card p-3 rounded-xl flex flex-col justify-center border-b-2 border-b-cyan-500 cursor-pointer hover:bg-white/5 transition-colors" onclick="toggleTimeFormat()" title="Click to Switch Units">
+                    <h3 class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Run Duration <span class="text-[9px] text-cyan-500 ml-1">(Click to Toggle)</span></h3>
+                    <div class="flex items-baseline gap-2">
+                        <span id="valRunDur" class="text-2xl font-bold text-cyan-300 font-mono">--:--</span>
+                        <span id="unitRunDur" class="text-[10px] text-slate-500 font-mono">HH:MM</span>
+                    </div>
+                </div>
+
+                <div class="hud-card p-3 rounded-xl flex flex-col justify-center border-b-2 border-b-red-500 cursor-pointer hover:bg-white/5 transition-colors" onclick="toggleTimeFormat()" title="Click to Switch Units">
+                    <h3 class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Breakdown Duration <span class="text-[9px] text-cyan-500 ml-1">(Click to Toggle)</span></h3>
+                     <div class="flex items-baseline gap-2">
+                        <span id="valBdDur" class="text-2xl font-bold text-red-400 font-mono">--:--</span>
+                        <span id="unitBdDur" class="text-[10px] text-slate-500 font-mono">HH:MM</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div class="hud-card p-4 rounded-xl">
+                    <h3 class="text-[10px] font-bold text-slate-400 uppercase mb-2" id="title-chartInvVsGuar">Generation vs Target</h3>
+                    <div class="chart-wrapper" id="cw-inv"><canvas id="chartInvVsGuar" ondblclick="VizEngine.expand('chartInvVsGuar')"></canvas></div>
+                    <div class="text-[9px] text-center text-slate-600 mt-1">Double-click to expand</div>
+                </div>
+                <div class="hud-card p-4 rounded-xl">
+                    <h3 class="text-[10px] font-bold text-slate-400 uppercase mb-2" id="title-chartRadPR">Performance Ratio & Irradiance</h3>
+                    <div class="chart-wrapper" id="cw-rad"><canvas id="chartRadPR" ondblclick="VizEngine.expand('chartRadPR')"></canvas></div>
+                    <div class="text-[9px] text-center text-slate-600 mt-1">Double-click to expand</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE: INVERTER MATRIX -->
+        <div id="view-inv-matrix" class="hidden space-y-6">
+            <div class="hud-card p-4 rounded-xl">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Temporal Generation Matrix (Heatmap)</h3>
+                    <div class="text-[10px] text-slate-500 font-mono">X: Time of Day | Y: Date | Intensity: Power Output</div>
+                </div>
+                <div class="w-full overflow-x-auto bg-black/40 p-4 rounded border border-white/5" style="min-height: 400px;">
+                    <canvas id="heatmapCanvas" height="600" width="1200"></canvas>
+                </div>
+                <div class="flex justify-between mt-2 text-[10px] text-slate-500 font-mono">
+                    <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:59</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE: TRANSFORMER -->
+        <div id="view-transformer" class="hidden space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="hud-card p-6 rounded-xl flex flex-col items-center justify-center">
+                     <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Transformation Efficiency</h3>
+                     <div class="relative h-40 w-40">
+                         <canvas id="gaugeTrafoEff"></canvas>
+                         <div class="absolute inset-0 flex items-center justify-center flex-col pointer-events-none">
+                             <span id="valTrafoEff" class="text-3xl font-bold text-white font-mono">--%</span>
+                             <span class="text-[9px] text-slate-500">AVG</span>
+                         </div>
+                     </div>
+                </div>
+                <div class="hud-card p-6 rounded-xl flex flex-col justify-center">
+                    <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Total Transformation Loss</h3>
+                    <div class="text-4xl font-bold text-red-400 font-mono mb-2" id="valTrafoLoss">--</div>
+                    <div class="text-xs text-slate-500">Calculated (Inverter Generation - Grid Export)</div>
+                    <div class="mt-4 w-full bg-slate-800 h-1 rounded"><div class="bg-red-500 h-full" style="width: 20%"></div></div>
+                </div>
+                 <div class="hud-card p-6 rounded-xl flex flex-col justify-center border-l-2 border-yellow-500">
+                    <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Transformer Status</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><div class="text-[9px] text-slate-500 uppercase">Oil Temp</div><div class="text-xl text-yellow-300 font-mono">NORMAL</div></div>
+                        <div><div class="text-[9px] text-slate-500 uppercase">Winding Temp</div><div class="text-xl text-yellow-300 font-mono">NORMAL</div></div>
+                        <div><div class="text-[9px] text-slate-500 uppercase">Loading</div><div class="text-xl text-cyan-300 font-mono" id="valTrafoLoad">--%</div></div>
+                        <div><div class="text-[9px] text-slate-500 uppercase">Fans</div><div class="text-xl text-green-300 font-mono">AUTO</div></div>
+                    </div>
+                </div>
+            </div>
+             <div class="hud-card p-4 rounded-xl">
+                <h3 class="text-[10px] font-bold text-slate-400 uppercase mb-2">Inverter vs Grid (Loss Visualization)</h3>
+                <div class="chart-wrapper" id="cw-trafo"><canvas id="chartTrafoComp" ondblclick="VizEngine.expand('chartTrafoComp')"></canvas></div>
+            </div>
+        </div>
+
+        <!-- PAGE 2: METER & GRID -->
+        <div id="view-meter" class="hidden space-y-6">
+            <div class="hud-card p-4 rounded-xl">
+                <div class="flex flex-wrap justify-between items-center mb-4 border-b border-white/10 pb-2">
+                    <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Multi-Parameter Holographic Projector</h3>
+                    <div class="flex gap-4 text-[10px] font-mono text-slate-300" id="multiSelectors"></div>
+                </div>
+                <div class="chart-wrapper h-80"><canvas id="chartDynamic" ondblclick="VizEngine.expand('chartDynamic')"></canvas></div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="hud-card p-4 rounded-xl">
+                    <h3 class="text-[10px] font-bold text-slate-400 uppercase mb-2" id="title-chartAbtVsGuar">Export vs Target</h3>
+                    <div class="chart-wrapper" id="cw-abt"><canvas id="chartAbtVsGuar" ondblclick="VizEngine.expand('chartAbtVsGuar')"></canvas></div>
+                </div>
+                <div class="hud-card p-4 rounded-xl flex flex-col justify-center items-center">
+                    <div class="text-center p-6 border border-slate-700 rounded bg-black/40 w-full">
+                        <h4 class="text-xs text-slate-400 uppercase mb-2">Total Exported Energy</h4>
+                        <div id="valTotalExport" class="text-4xl font-bold text-emerald-400 font-mono">--</div>
+                        <div class="text-[10px] text-slate-500">Cumulative kWh</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE 3: FAULT MATRIX -->
+        <div id="view-fault" class="hidden space-y-4">
+            <div class="hud-card p-4 rounded-xl overflow-hidden">
+                <h3 class="text-[10px] font-bold text-red-400 uppercase mb-4 tracking-widest">Anomaly Detection Matrix</h3>
+                <div class="overflow-x-auto h-[600px] custom-scrollbar">
+                    <table class="w-full text-xs text-left text-slate-400 font-mono">
+                        <thead class="bg-black/50 sticky top-0 text-cyan-400 shadow-lg">
+                            <tr><th>Period</th><th>Type</th><th>Remark/Log</th><th>Down Time</th><th>Est. Loss</th><th>Severity</th></tr>
+                        </thead>
+                        <tbody id="faultTableBody" class="divide-y divide-slate-800"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE: PLANT COMPARISON -->
+        <div id="view-comparison" class="hidden space-y-6">
+             <div class="hud-card p-4 rounded-xl">
+                <h3 class="text-[10px] font-bold text-slate-400 uppercase mb-2">Global Plant Comparison (Generation)</h3>
+                <div class="chart-wrapper"><canvas id="chartCompGen"></canvas></div>
+            </div>
+             <div class="hud-card p-4 rounded-xl">
+                <h3 class="text-[10px] font-bold text-slate-400 uppercase mb-2">Global Plant Comparison (PR %)</h3>
+                <div class="chart-wrapper"><canvas id="chartCompPR"></canvas></div>
+            </div>
+        </div>
+
+        <!-- PAGE 4: YEARLY -->
+        <div id="view-year" class="hidden space-y-6">
+            <div class="hud-card p-4 rounded-xl">
+                <h3 class="text-[10px] font-bold text-slate-400 uppercase mb-2">Yearly Generation Comparison</h3>
+                <div class="chart-wrapper" id="cw-year"><canvas id="chartYearComp" ondblclick="VizEngine.expand('chartYearComp')"></canvas></div>
+            </div>
+        </div>
+
+        <!-- PAGE 5: REPORTS -->
+        <div id="view-report" class="hidden hud-card p-8 rounded-xl max-w-2xl mx-auto mt-10">
+            <h2 class="text-2xl font-bold text-white uppercase tracking-widest border-b border-slate-700 pb-4 mb-6">Report Generator</h2>
+            <div class="grid grid-cols-1 gap-6">
+                <div><label class="block text-xs font-bold text-slate-400 mb-2">Target Plant</label><select id="reportPlant" class="w-full rounded px-3 py-2 text-sm text-white"></select></div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-2">Report Type</label>
+                    <select id="reportType" class="w-full rounded px-3 py-2 text-sm text-white">
+                        <option value="summary">Executive Summary (PDF)</option>
+                        <option value="daily">Daily Generation Log (PDF)</option>
+                        <option value="raw">Full Data Dump (CSV)</option>
+                    </select>
+                </div>
+                <div class="flex gap-4">
+                    <button onclick="generateReport()" class="flex-1 py-4 bg-cyan-900/40 border border-cyan-500/50 hover:bg-cyan-900/60 text-cyan-100 rounded text-sm font-bold uppercase transition-all">GENERATE & DOWNLOAD</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- ASTER COMPUTING ENGINE -->
+<script>
+    /* ==================================================================================
+       STAGE 1: DATA ENGINE (Process & Clean)
+       - Handles Web Worker
+       - Raw Data Ingestion
+       - Data Storage
+       ================================================================================== */
+    
+    // THE WORKER SCRIPT (EMBEDDED)
+    const workerBlob = new Blob([`
+        importScripts("https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js");
+        const SCHEMA = {
+            month: ['month','date','period', 'timestamp', 'time'],
+            actGen: ['actual_generation','inverter generation (kwh)','generation_kwh','energy','actual generation ( kwh )', 'gen(kwh)', 'inverter gen', 'energy (kwh)'],
+            abtGen: ['abt generation', 'meter generation', 'export', 'grid export', 'billed units', 'export (kwh)', 'abt meter generation', 'abt'], 
+            guarGen: ['guaranteed','budget', 'target', 'kpi'],
+            radAct: ['actual irradiation','actual radiation','gti','actual radiation excluding grid failure','irradiance', 'actual irrad', 'radiation', 'insolation'],
+            radExp: ['expected irradiation','pvsyst','reference irradiation', 'budget rad'],
+            bdTime: ['total b/d time', 'breakdown time', 'b/d time', 'total b/d', 'downtime'],
+            bdType: ['breakdown type', 'type of breakdown', 'fault type', 'error code'],
+            gridLoss: ['grid loss','grid unavailability', 'losses due to grid', 'grid outage loss'],
+            plantLoss: ['losses due to plant', 'plant unavailability', 'plant loss', 'inverter outage loss'],
+            remarks: ['remarks', 'remark', 'comments', 'note', 'reason', 'log'],
+            startTime: ['start time', 'plant start', 'inverter start', 'on time'],
+            stopTime: ['stop time', 'plant stop', 'inverter stop', 'off time', 'grid off']
+        };
+
+        function normalizeDate(val) {
+            if(!val) return null;
+            if(typeof val === 'number') {
+                try {
+                    const d = XLSX.SSF.parse_date_code(val);
+                    const pad = (n) => String(n).padStart(2,'0');
+                    return \`\${d.y}-\${pad(d.m)}-\${pad(d.d)} \${pad(d.H)}:\${pad(d.M)}:\${pad(d.S)}\`;
+                } catch(e) { return null; }
+            }
+            const str = String(val).trim();
+            if(!str) return null;
+            if(str.match(/^\\d{4}-\\d{2}-\\d{2}/)) return str.length === 10 ? str + ' 00:00:00' : str;
+            let m = str.match(/^(\\d{1,2})[/-](\\d{1,2})[/-](\\d{2,4})(?:\\s+(\\d{1,2}):(\\d{2})(?::(\\d{2}))?)?/);
+            if(m) {
+                let y = m[3];
+                if(y.length === 2) y = '20' + y;
+                const pad = (n) => String(n||0).padStart(2,'0');
+                return \`\${y}-\${pad(m[2])}-\${pad(m[1])} \${pad(m[4])}:\${pad(m[5])}:\${pad(m[6])}\`;
+            }
+            return null;
+        }
+
+        function parseTime(val) {
+            if(val == null || val === '') return null;
+            if(typeof val === 'number') {
+                let fraction = val % 1;
+                const totalSeconds = Math.round(fraction * 86400);
+                const h = Math.floor(totalSeconds / 3600);
+                const m = Math.floor((totalSeconds % 3600) / 60);
+                return (h * 60) + m; 
+            }
+            const str = String(val).trim();
+            let match = str.match(/(\\d{1,2})[:.](\\d{2})/);
+            if(match) {
+                let h = parseInt(match[1]);
+                let m = parseInt(match[2]);
+                if(str.toLowerCase().includes('pm') && h < 12) h += 12;
+                if(str.toLowerCase().includes('am') && h === 12) h = 0;
+                return (h * 60) + m;
+            }
+            return null;
+        }
+
+        self.onmessage = function(e) {
+            const { fileData, fileName } = e.data;
+            try {
+                const wb = XLSX.read(new Uint8Array(fileData), {type: 'array', dense: true});
+                let batch = [];
+                const BATCH_SIZE = 5000;
+                
+                wb.SheetNames.forEach(sheetName => {
+                    const ws = wb.Sheets[sheetName];
+                    const rows = XLSX.utils.sheet_to_json(ws, {header: 1, defval: null});
+                    if(rows.length < 2) return;
+
+                    let pName = null;
+                    for(let r=0; r<Math.min(rows.length, 25); r++) {
+                        const rowStr = rows[r].join(' ');
+                        let mName = rowStr.match(/Plant Name:?\\s*([^,]+)/i); 
+                        if(mName && mName[1].length > 2) { pName = mName[1].trim(); break; }
+                    }
+                    if(!pName) {
+                        pName = fileName.replace(/\\.(csv|xlsx|xls)$/i, '').replace(/[-_]/g, ' ').replace(/\\d{8}|\\d{4}-\\d{2}-\\d{2}/g, '').trim();
+                        pName = pName.replace(/\\b\\w/g, c => c.toUpperCase());
+                    }
+
+                    let dcCap = 0, acCap = 0;
+                    for(let r=0; r<Math.min(rows.length, 25); r++) {
+                        const rowStr = rows[r].join(' ');
+                        let mDC = rowStr.match(/DC Capacity.*?:\\s*([0-9,.]+)/i);
+                        if(mDC) dcCap = parseFloat(mDC[1].replace(/,/g,''));
+                        let mAC = rowStr.match(/AC Capacity.*?:\\s*([0-9,.]+)/i);
+                        if(mAC) acCap = parseFloat(mAC[1].replace(/,/g,''));
+                    }
+
+                    let hIdx = -1;
+                    for(let i=0; i<Math.min(rows.length, 50); i++) {
+                        const s = rows[i].map(c=>String(c).toLowerCase()).join(' ');
+                        if((s.includes('month') || s.includes('date') || s.includes('timestamp')) && 
+                           (s.includes('gen') || s.includes('kwh') || s.includes('energy'))) { 
+                            hIdx = i; break; 
+                        }
+                    }
+
+                    if(hIdx !== -1) {
+                        const dataJson = XLSX.utils.sheet_to_json(ws, {range: hIdx, defval: null});
+                        const sampleKeys = Object.keys(dataJson[0] || {});
+                        const mapKey = (schemaArr) => sampleKeys.find(k => schemaArr.some(s => k.toLowerCase().includes(s)));
+                        
+                        const kMonth = mapKey(SCHEMA.month);
+                        const kAct = mapKey(SCHEMA.actGen);
+                        const kAbt = mapKey(SCHEMA.abtGen);
+                        const kGuar = mapKey(SCHEMA.guarGen);
+                        const kRadAct = mapKey(SCHEMA.radAct);
+                        const kRadExp = mapKey(SCHEMA.radExp);
+                        const kGridLoss = mapKey(SCHEMA.gridLoss);
+                        const kPlantLoss = mapKey(SCHEMA.plantLoss);
+                        const kRem = mapKey(SCHEMA.remarks);
+                        const kBdTime = mapKey(SCHEMA.bdTime);
+                        const kBdType = mapKey(SCHEMA.bdType);
+                        const kStart = mapKey(SCHEMA.startTime);
+                        const kStop = mapKey(SCHEMA.stopTime);
+
+                        if(!kMonth) return; 
+
+                        dataJson.forEach(row => {
+                            try {
+                                let dateStr = normalizeDate(row[kMonth]);
+                                if(!dateStr) return; 
+
+                                let item = { 
+                                    plantName: pName, dcCap: dcCap||0, acCap: acCap||0, 
+                                    actGen:0, abtGen:0, guarGen:0, radAct:0, radExp:0,
+                                    bdPlant:0, bdGrid:0, gridLoss:0, plantLoss:0, 
+                                    cat: 'INFO', month: dateStr,
+                                    sTime: null, eTime: null
+                                };
+
+                                const clean = (k) => {
+                                    if(!k) return 0;
+                                    let v = row[k];
+                                    if(typeof v === 'string') v = parseFloat(v.replace(/,/g,'').replace(/%/g,''));
+                                    return (v && isFinite(v)) ? v : 0;
+                                };
+
+                                item.actGen = clean(kAct);
+                                item.abtGen = clean(kAbt);
+                                item.guarGen = clean(kGuar);
+                                item.radAct = clean(kRadAct);
+                                item.radExp = clean(kRadExp);
+                                item.gridLoss = clean(kGridLoss);
+                                item.plantLoss = clean(kPlantLoss);
+                                item.remarks = kRem ? String(row[kRem] || '') : '';
+
+                                let rawBdTime = clean(kBdTime);
+                                let rawBdType = kBdType ? String(row[kBdType]).toLowerCase() : '';
+
+                                if(rawBdTime > 0) {
+                                    if(rawBdType.includes('grid') || rawBdType.includes('line') || rawBdType.includes('substation')) {
+                                        item.bdGrid = rawBdTime; item.cat = 'GRID';
+                                    } else {
+                                        item.bdPlant = rawBdTime; item.cat = 'PLANT';
+                                    }
+                                }
+                                if(item.remarks.toLowerCase().includes('trip')) item.cat = 'TRIP';
+                                if(kStart) item.sTime = parseTime(row[kStart]);
+                                if(kStop) item.eTime = parseTime(row[kStop]);
+
+                                batch.push(item);
+                                if(batch.length >= BATCH_SIZE) {
+                                    self.postMessage({ type: 'data', rows: batch });
+                                    batch = [];
+                                }
+                            } catch(err) {}
+                        });
+                    }
+                });
+                
+                if(batch.length > 0) self.postMessage({ type: 'data', rows: batch });
+                self.postMessage({ type: 'done' });
+            } catch(e) { self.postMessage({ type: 'error', msg: e.message }); }
+        };
+    `], {type: 'application/javascript'});
+
+    const DataEngine = {
+        db: [],
+        worker: null,
+        init: function() {
+            this.worker = new Worker(URL.createObjectURL(workerBlob));
+            this.worker.onmessage = (e) => {
+                const { type, rows } = e.data;
+                if(type === 'data') {
+                    // FIX: Replaced spread operator push(...rows) with loop to prevent Maximum call stack size exceeded
+                    for(let i=0; i<rows.length; i++) {
+                        this.db.push(rows[i]);
+                    }
+                    // Minimal UI update for loading progress
+                    requestAnimationFrame(() => {
+                        document.getElementById('upload-text').innerText = `Stage 1 Processing: ${this.db.length} records...`;
+                    });
+                }
+                if(type === 'done') {
+                    window.procCount++;
+                    document.getElementById('upload-progress').style.width = Math.round((window.procCount / window.totFiles)*100) + '%';
+                    if(window.procCount === window.totFiles) {
+                        setTimeout(() => {
+                            document.getElementById('loader-overlay').classList.add('hidden');
+                            this.populateFilters();
+                            runAnalysisPipeline(); // Trigger Stage 2
+                        }, 500);
+                    }
+                }
+            };
+        },
+        ingest: function(input) {
+            if(!input.files.length) return;
+            if(!this.worker) this.init();
+            
+            // Auto Turbo check
+            if(input.files.length > 5 || input.files[0].size > 5000000) {
+                if(!App.isTurbo) toggleTurbo();
+            }
+
+            this.db = []; // Clear existing for fresh ingestion (or append if desired, but here we reset)
+            window.totFiles = input.files.length; 
+            window.procCount = 0;
+            
+            document.getElementById('loader-overlay').classList.remove('hidden');
+            document.getElementById('upload-progress').style.width = '0%';
+            
+            Array.from(input.files).forEach(f => {
+                const r = new FileReader();
+                r.onload = e => this.worker.postMessage({ fileData: e.target.result, fileName: f.name });
+                r.readAsArrayBuffer(f);
+            });
+        },
+        populateFilters: function() {
+            const plants = [...new Set(this.db.map(d=>d.plantName))].sort();
+            const sel = document.getElementById('plantSelector');
+            const rpt = document.getElementById('reportPlant');
+            let html = plants.map(p => `<option value="${p}">${p}</option>`).join('');
+            sel.innerHTML = html; rpt.innerHTML = html;
+
+            const dates = this.db.map(d=>d.month.substring(0,10)).sort();
+            if(dates.length) {
+                document.getElementById('dateStart').value = dates[0];
+                document.getElementById('dateEnd').value = dates[dates.length-1];
+            }
+            
+            // Setup Multi-selectors
+            const multi = document.getElementById('multiSelectors');
+            multi.innerHTML = `
+                <label class="flex items-center gap-1 cursor-pointer hover:text-cyan-400"><input type="checkbox" value="actGen" checked onchange="VizEngine.renderDynamicChart()"> Act Gen</label>
+                <label class="flex items-center gap-1 cursor-pointer hover:text-cyan-400"><input type="checkbox" value="guarGen" onchange="VizEngine.renderDynamicChart()"> Target</label>
+                <label class="flex items-center gap-1 cursor-pointer hover:text-cyan-400"><input type="checkbox" value="radAct" onchange="VizEngine.renderDynamicChart()"> Irradiance</label>
+                <label class="flex items-center gap-1 cursor-pointer hover:text-cyan-400"><input type="checkbox" value="pr" checked onchange="VizEngine.renderDynamicChart()"> PR %</label>
+                <label class="flex items-center gap-1 cursor-pointer hover:text-cyan-400"><input type="checkbox" value="gridLoss" onchange="VizEngine.renderDynamicChart()"> Grid Loss</label>
+            `;
+        },
+        getFiltered: function(plant, start, end) {
+            return this.db.filter(d => {
+                const day = d.month.substring(0,10);
+                return d.plantName === plant && day >= start && day <= end;
+            });
+        },
+        getRaw: function() { return this.db; }
+    };
+
+    /* ==================================================================================
+       STAGE 2: CALCULATION ENGINE (Calculate & Formulate)
+       - Math, Aggregations, Metrics
+       - No UI manipulation here
+       ================================================================================== */
+    
+    const CalcEngine = {
+        computeMetrics: function(item) {
+            let rawDc = item.dcCap || 1;
+            let rawAc = item.acCap || 1;
+            let dc = rawDc < 100 ? rawDc * 1000 : rawDc;
+            let ac = rawAc < 100 ? rawAc * 1000 : rawAc;
+            
+            const daySpan = item.daySpan || 1;
+            if (dc * item.radAct > 0) item.pr = item.actGen / (dc * item.radAct);
+            else item.pr = 0;
+
+            if (dc * 24 * daySpan > 0) item.dcCuf = item.actGen / (dc * 24 * daySpan);
+            else item.dcCuf = 0;
+            
+            if (ac * 24 * daySpan > 0) item.acCuf = item.actGen / (ac * 24 * daySpan);
+            else item.acCuf = 0;
+
+            const totalMins = daySpan * 1440; 
+            item.plantAvail = totalMins > 0 ? Math.max(0, (totalMins - item.bdPlant)/totalMins) : 0;
+            item.gridAvail = totalMins > 0 ? Math.max(0, (totalMins - item.bdGrid)/totalMins) : 0;
+            item.specYield = (dc * daySpan) > 0 ? (item.actGen / (dc * daySpan)) : 0;
+
+            return item;
+        },
+
+        aggregate: function(rawData, level, startStr, endStr) {
+            if(!rawData.length) return { filtered: [], total: {}, raw: [] };
+            
+            // 0. Detect Time Interval
+            rawData.sort((a,b) => a.month.localeCompare(b.month));
+            let intervalMin = 15;
+            if(rawData.length > 1) {
+                const diff = (new Date(rawData[1].month).getTime() - new Date(rawData[0].month).getTime()) / 60000;
+                if(diff > 0 && diff <= 1440) intervalMin = diff;
+            }
+
+            // 1. Pre-calculate Daily Stats (Start/Stop)
+            const dailyStats = {};
+            rawData.forEach(r => {
+                const dateKey = r.month.substring(0,10);
+                const ts = new Date(r.month).getTime();
+                if(!dailyStats[dateKey]) dailyStats[dateKey] = { start: null, stop: null, manual: false };
+                const ds = dailyStats[dateKey];
+                
+                if(r.sTime !== null || r.eTime !== null) {
+                    ds.manual = true;
+                    if(r.sTime !== null && (ds.start === null || r.sTime < ds.start)) ds.start = r.sTime;
+                    if(r.eTime !== null && (ds.stop === null || r.eTime > ds.stop)) ds.stop = r.eTime;
+                } else if(!ds.manual && r.actGen > 0.001) {
+                    if(ds.start === null || ts < ds.start) ds.start = ts;
+                    if(ds.stop === null || ts > ds.stop) ds.stop = ts;
+                }
+            });
+
+            // 2. Grouping Loop
+            const grp = {};
+            for(let i=0; i<rawData.length; i++) {
+                const r = rawData[i];
+                let k = r.month; 
+                const dObj = new Date(r.month.replace(' ', 'T'));
+                const dateKey = r.month.substring(0,10);
+
+                if(level === '1min') k = r.month.substring(0, 16);
+                else if(level === '5min') k = r.month.substring(0, 13) + ':' + String(Math.floor(dObj.getMinutes()/5)*5).padStart(2,'0');
+                else if(level === '15min') k = r.month.substring(0, 13) + ':' + String(Math.floor(dObj.getMinutes()/15)*15).padStart(2,'0');
+                else if(level === '30min') k = r.month.substring(0, 13) + ':' + String(Math.floor(dObj.getMinutes()/30)*30).padStart(2,'0');
+                else if(level === 'hour') k = r.month.substring(0, 13) + ':00';
+                else if(level === 'day') k = r.month.substring(0, 10);
+                else if(level === 'month') k = r.month.substring(0, 7);
+                else if(level === 'year') k = r.month.substring(0, 4);
+
+                if(!grp[k]) grp[k] = { 
+                    ...r, count:0, month:k, daySet: new Set(),
+                    actGen:0, abtGen:0, guarGen:0, radAct:0, radExp:0, 
+                    gridLoss:0, plantLoss:0, bdPlant:0, bdGrid:0, runMins: 0
+                };
+                const g = grp[k];
+                g.count++; g.daySet.add(dateKey);
+                g.actGen+=r.actGen; g.abtGen+=r.abtGen; g.guarGen+=r.guarGen;
+                g.radAct+=r.radAct; g.radExp+=r.radExp; g.gridLoss+=r.gridLoss;
+                g.plantLoss+=r.plantLoss; g.bdPlant+=r.bdPlant; g.bdGrid+=r.bdGrid;
+                
+                let rowRunMins = 0;
+                if (r.sTime !== null && r.eTime !== null && r.eTime >= r.sTime) {
+                    const rawDur = r.eTime - r.sTime;
+                    const totalBd = (r.bdPlant || 0) + (r.bdGrid || 0);
+                    rowRunMins = Math.max(0, rawDur - totalBd);
+                } else if (r.actGen > 0.001) {
+                    if (intervalMin < 180) rowRunMins = intervalMin;
+                }
+                g.runMins += rowRunMins;
+            }
+
+            // 3. Finalize Filtered Array
+            const filtered = Object.values(grp).sort((a,b)=>a.month.localeCompare(b.month)).map(item => {
+                if(level === 'month') { const [y, m] = item.month.split('-'); item.daySpan = new Date(y, m, 0).getDate(); } 
+                else if (level === 'year') item.daySpan = 365;
+                else if (level === 'day') item.daySpan = 1;
+                else item.daySpan = item.daySet.size || 1;
+
+                // Time logic (simplified for brevity)
+                item.displayStart = '--:--'; item.displayStop = '--:--';
+                return this.computeMetrics(item);
+            });
+
+            // 4. Compute Totals
+            const total = Object.values(grp).reduce((acc, curr) => {
+                if(!acc.count) acc = { ...curr, count:0, actGen:0, abtGen:0, radAct:0, bdPlant:0, bdGrid:0, plantLoss:0, gridLoss:0, runMins:0 };
+                acc.count += curr.count;
+                acc.actGen += curr.actGen; acc.abtGen += curr.abtGen; acc.radAct += curr.radAct; 
+                acc.bdPlant += curr.bdPlant; acc.bdGrid += curr.bdGrid;
+                acc.plantLoss += curr.plantLoss; acc.gridLoss += curr.gridLoss;
+                acc.runMins += curr.runMins;
+                return acc;
+            }, {});
+
+            total.daySpan = Math.ceil(Math.abs(new Date(endStr) - new Date(startStr)) / (1000 * 3600 * 24)) + 1;
+            // Add Start/Stop Times for Total (Simplified Average)
+            let stSum = 0, etSum = 0, validDays = 0;
+            Object.values(dailyStats).forEach(ds => {
+                if(ds.start !== null) {
+                    let sMins, eMins;
+                    if(ds.manual) { sMins = ds.start; eMins = ds.stop; } 
+                    else {
+                        const sDate = new Date(ds.start); const eDate = new Date(ds.stop);
+                        sMins = sDate.getHours()*60 + sDate.getMinutes(); eMins = eDate.getHours()*60 + eDate.getMinutes();
+                    }
+                    stSum += sMins; etSum += eMins; validDays++;
+                }
+            });
+            if(validDays > 0) {
+                total.displayStart = minsToTime(stSum/validDays);
+                total.displayStop = minsToTime(etSum/validDays);
+            } else { total.displayStart='--:--'; total.displayStop='--:--'; }
+
+            this.computeMetrics(total);
+
+            return { filtered, total, raw: rawData };
+        },
+        
+        getPlantComparisons: function(start, end) {
+            const allPlants = [...new Set(DataEngine.db.map(d=>d.plantName))];
+            return allPlants.map(p => {
+                const rows = DataEngine.db.filter(d => d.plantName === p && d.month >= start && d.month <= end);
+                const totGen = rows.reduce((a,b)=>a+b.actGen,0);
+                const avgPr = rows.length ? rows.reduce((a,b)=>a + (b.actGen/(b.dcCap*b.radAct)||0),0)/rows.length : 0;
+                return { name: p, gen: totGen, pr: avgPr * 100 };
+            });
+        }
+    };
+
+    /* ==================================================================================
+       STAGE 3: VISUALIZATION ENGINE (Visualization)
+       - Painting, Chart.js, HTML updates
+       ================================================================================== */
+    
+    const VizEngine = {
+        charts: {},
+        currentResult: null, // Stores result from CalcEngine
+        
+        updateAll: function(analysisResult) {
+            this.currentResult = analysisResult;
+            const { filtered, total, raw } = analysisResult;
+            
+            this.updateHUD(total);
+            this.renderCharts(filtered);
+            this.renderGauges(total);
+            this.renderFaults(raw);
+            this.renderDynamicChart(); // Depends on UI checkboxes
+            this.renderYearly();
+            this.renderInvMatrix(raw);
+            this.renderTransformer(total, filtered);
+            this.renderComparisons();
+        },
+
+        updateHUD: function(total) {
+            const r1 = this.currentResult.raw[0] || {};
+            const dcIsMw = (r1.dcCap || 0) < 100;
+            const acIsMw = (r1.acCap || 0) < 100;
+            document.getElementById('plantDC').innerText = (r1.dcCap||0) + (dcIsMw ? ' MWp' : ' kWp');
+            document.getElementById('plantAC').innerText = (r1.acCap||0) + (acIsMw ? ' MW' : ' kW');
+            
+            // Text metrics
+            document.getElementById('valPlantAvail').innerText = (total.plantAvail*100).toFixed(2)+'%';
+            document.getElementById('barPlantAvail').style.width = (total.plantAvail*100)+'%';
+            document.getElementById('valPlantLoss').innerText = Math.round(total.plantLoss);
+            
+            document.getElementById('valGridAvail').innerText = (total.gridAvail*100).toFixed(2)+'%';
+            document.getElementById('barGridAvail').style.width = (total.gridAvail*100)+'%';
+            document.getElementById('valGridLoss').innerText = Math.round(total.gridLoss);
+
+            document.getElementById('valSpecYield').innerText = total.specYield.toFixed(2);
+            document.getElementById('valStartTime').innerText = total.displayStart;
+            document.getElementById('valStopTime').innerText = total.displayStop;
+
+            document.getElementById('valRunDur').innerText = formatDur(total.runMins);
+            document.getElementById('unitRunDur').innerText = App.timeFormatDecimal ? 'Hrs' : 'HH:MM';
+            document.getElementById('valBdDur').innerText = formatDur(total.bdPlant + total.bdGrid);
+            document.getElementById('unitBdDur').innerText = App.timeFormatDecimal ? 'Hrs' : 'HH:MM';
+            
+            document.getElementById('valTotalExport').innerText = total.abtGen.toLocaleString();
+        },
+
+        renderGauges: function(total) {
+            const c = App.theme.c;
+            const draw = (id, val, max, colIdx) => {
+                if(this.charts[id]) this.charts[id].destroy();
+                const ctx = document.getElementById(id).getContext('2d');
+                this.charts[id] = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: { 
+                        datasets: [{ 
+                            data: [val, Math.max(0, max-val)], backgroundColor: [c[colIdx], '#333'], borderWidth:0, needleValue: val, needleMax: max
+                        }] 
+                    },
+                    options: { rotation: -90, circumference: 180, cutout: '80%', animation: !App.isTurbo, plugins: { legend: {display:false}, tooltip: {enabled:false} } },
+                    plugins: [gaugePlugin] 
+                });
+            };
+            const safe = (v) => (isNaN(v) ? 0 : v);
+
+            draw('gaugePR', safe(total.pr), 1.0, 0); 
+            document.getElementById('valPR').innerText = (safe(total.pr)*100).toFixed(1)+'%';
+            
+            draw('gaugeDCCUF', safe(total.dcCuf), 0.25, 1); 
+            document.getElementById('valDCCUF').innerText = (safe(total.dcCuf)*100).toFixed(2)+'%';
+            
+            draw('gaugeACCUF', safe(total.acCuf), 0.30, 2); 
+            document.getElementById('valACCUF').innerText = (safe(total.acCuf)*100).toFixed(2)+'%';
+
+            const health = (safe(total.pr) * 0.4) + (safe(total.plantAvail) * 0.4) + (safe(total.gridAvail) * 0.2);
+            const hEl = document.getElementById('healthScore');
+            hEl.innerText = `SYSTEM HEALTH: ${(health*100).toFixed(1)}%`;
+            hEl.style.color = health > 0.8 ? c[2] : (health > 0.6 ? c[3] : c[4]);
+        },
+
+        renderCharts: function(d) {
+            const lbs = d.map(r=>r.month);
+            const c = App.theme.c;
+
+            // Inv vs Guar
+            this.createChart('chartInvVsGuar', 'bar', lbs, [
+                { label: 'Actual', data: d.map(r=>r.actGen), backgroundColor: c[0] },
+                { label: 'Target', data: d.map(r=>r.guarGen), type: 'line', borderColor: c[4], borderWidth: 2 }
+            ], false, [
+                {key: 'guarGen', label: 'Target', selected: true, colorIdx: 4},
+                {key: 'radAct', label: 'Irradiance', colorIdx: 3},
+                {key: 'pr', label: 'PR %', yAxisID: 'y1', colorIdx: 2}
+            ]);
+
+            // Rad vs PR
+            this.createChart('chartRadPR', 'line', lbs, [
+                { label: 'PR %', data: d.map(r=>r.pr*100), borderColor: c[2], yAxisID: 'y1' },
+                { label: 'Irradiance', data: d.map(r=>r.radAct), backgroundColor: c[3]+'30', fill: true }
+            ], true, [
+                {key: 'radAct', label: 'Irradiance', selected: true, colorIdx: 3},
+                {key: 'radExp', label: 'Expected Rad', colorIdx: 1}
+            ]);
+
+            // Export vs Guar
+            this.createChart('chartAbtVsGuar', 'bar', lbs, [
+                { label: 'Export', data: d.map(r=>r.abtGen), backgroundColor: c[1] },
+                { label: 'Target', data: d.map(r=>r.guarGen), type:'line', borderColor: c[4] }
+            ]);
+        },
+        
+        renderDynamicChart: function() {
+            if(!this.currentResult) return;
+            const d = this.currentResult.filtered;
+            const lbs = d.map(r=>r.month);
+            const c = App.theme.c;
+            const checks = document.querySelectorAll('#multiSelectors input:checked');
+            
+            const datasets = Array.from(checks).map((chk, i) => {
+                const k = chk.value;
+                let data = d.map(r=>r[k]);
+                let y1 = false;
+                if(k==='pr') { data = data.map(v=>v*100); y1 = true; }
+                return { label: k.toUpperCase(), data: data, borderColor: c[i%c.length], yAxisID: y1?'y1':'y' };
+            });
+            this.createChart('chartDynamic', 'line', lbs, datasets, datasets.some(d=>d.yAxisID==='y1'));
+        },
+        
+        renderFaults: function(raw) {
+            const tbody = document.getElementById('faultTableBody');
+            const frag = document.createDocumentFragment();
+            const errs = raw.filter(r => r.bdTime > 0 || (r.remarks && r.remarks.length > 3)).sort((a,b)=>b.month.localeCompare(a.month));
+            errs.forEach(r => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-white/5 border-b border-slate-800 transition';
+                const loss = Math.round(r.gridLoss + r.plantLoss);
+                const sev = loss > 5000 ? 'text-red-500 font-bold' : (loss > 1000 ? 'text-orange-400' : 'text-slate-400');
+                tr.innerHTML = `
+                    <td class="p-2 text-cyan-300 whitespace-nowrap">${r.month}</td>
+                    <td class="p-2 font-bold ${r.cat==='GRID'?'text-red-400':'text-blue-400'}">${r.cat}</td>
+                    <td class="p-2 text-slate-300 max-w-[200px] truncate" title="${r.remarks}">${r.remarks || 'Detected Anomaly'}</td>
+                    <td class="p-2 font-mono">${r.bdTime} min</td>
+                    <td class="p-2 font-mono text-white">${loss} kWh</td>
+                    <td class="p-2 ${sev}">${loss > 5000 ? 'CRITICAL' : 'MODERATE'}</td>
+                `;
+                frag.appendChild(tr);
+            });
+            tbody.innerHTML = '';
+            tbody.appendChild(frag);
+        },
+
+        renderInvMatrix: function(raw) {
+            const canvas = document.getElementById('heatmapCanvas');
+            const ctx = canvas.getContext('2d');
+            const W = canvas.width; const H = canvas.height;
+            ctx.clearRect(0,0,W,H);
+            
+            const dailyData = {};
+            raw.forEach(r => {
+                const dateStr = r.month.substring(0,10);
+                if(!dailyData[dateStr]) dailyData[dateStr] = new Array(24).fill(0);
+                const h = new Date(r.month).getHours();
+                if(h >= 0 && h < 24) dailyData[dateStr][h] += r.actGen;
+            });
+            
+            const dates = Object.keys(dailyData).sort();
+            if(!dates.length) return;
+            let maxVal = 0;
+            Object.values(dailyData).forEach(arr => arr.forEach(v => { if(v > maxVal) maxVal = v; }));
+            
+            const cellW = (W - 40) / 24; const cellH = (H - 20) / dates.length;
+            ctx.font = '10px JetBrains Mono';
+            dates.forEach((d, yIdx) => {
+                if(yIdx % Math.ceil(dates.length/20) === 0) { ctx.fillStyle = '#666'; ctx.fillText(d, 0, (yIdx * cellH) + 30); }
+                for(let h=0; h<24; h++) {
+                    const val = dailyData[d][h];
+                    const int = maxVal > 0 ? val / maxVal : 0;
+                    if(val > 0) {
+                        const r = Math.floor(0 * int); const g = Math.floor(243 * int); const b = Math.floor(255 * int);
+                        ctx.fillStyle = `rgb(${r},${g},${b})`;
+                    } else { ctx.fillStyle = 'rgba(255,255,255,0.02)'; }
+                    ctx.fillRect(50 + (h * cellW), 20 + (yIdx * cellH), cellW - 1, cellH - 1);
+                }
+            });
+        },
+
+        renderTransformer: function(total, filtered) {
+            const c = App.theme.c;
+            const gauge = (id, val) => {
+                if(this.charts[id]) this.charts[id].destroy();
+                const ctx = document.getElementById(id).getContext('2d');
+                this.charts[id] = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: { datasets: [{ data: [val, 100-val], backgroundColor: [c[2], '#222'], borderWidth:0, needleValue:val, needleMax:100 }] },
+                    options: { rotation: -90, circumference: 180, cutout: '75%', plugins: { tooltip: {enabled:false} } },
+                    plugins: [gaugePlugin]
+                });
+            };
+            
+            let eff = 0;
+            if(total.actGen > 0) eff = (total.abtGen / total.actGen) * 100;
+            if(eff > 100) eff = 100;
+            
+            gauge('gaugeTrafoEff', eff);
+            document.getElementById('valTrafoEff').innerText = eff.toFixed(1) + '%';
+            document.getElementById('valTrafoLoss').innerText = Math.max(0, total.actGen - total.abtGen).toLocaleString() + ' kWh';
+            
+            const hours = total.runMins / 60;
+            let load = 0;
+            if(total.acCap > 0 && hours > 0) load = (total.actGen / (total.acCap * hours)) * 100;
+            document.getElementById('valTrafoLoad').innerText = load.toFixed(1) + '%';
+            
+            this.createChart('chartTrafoComp', 'bar', filtered.map(r=>r.month), [
+                { label: 'Inverter Gen', data: filtered.map(r=>r.actGen), backgroundColor: c[0] },
+                { label: 'Export (Grid)', data: filtered.map(r=>r.abtGen), backgroundColor: c[1] }
+            ]);
+        },
+
+        renderYearly: function() {
+            const raw = DataEngine.getRaw();
+            const years = [...new Set(raw.map(d=>d.month.substring(0,4)))].sort();
+            if(!years.length) return;
+            const yData = years.map(y => raw.filter(d=>d.month.startsWith(y)).reduce((acc, curr) => acc + curr.actGen, 0));
+            const c = App.theme.c;
+            this.createChart('chartYearComp', 'bar', years, [{ label:'Generation', data:yData, backgroundColor:c[0] }]);
+        },
+        
+        renderComparisons: function() {
+            const sStr = document.getElementById('dateStart').value;
+            const eStr = document.getElementById('dateEnd').value;
+            const plantStats = CalcEngine.getPlantComparisons(sStr, eStr);
+            if(!plantStats.length) return;
+
+            const labels = plantStats.map(x=>x.name);
+            const c = App.theme.c;
+
+            this.createChart('chartCompGen', 'bar', labels, [{ label: 'Total Gen (kWh)', data: plantStats.map(x=>x.gen), backgroundColor: c[0] }]);
+            this.createChart('chartCompPR', 'bar', labels, [{ label: 'Avg PR (%)', data: plantStats.map(x=>x.pr), backgroundColor: c[2] }]);
+        },
+
+        createChart: function(id, type, labels, datasets, y1=false, params=[]) {
+            const wrapper = document.getElementById(id).parentElement;
+            if(!wrapper.querySelector('.chart-tools')) {
+                const tools = document.createElement('div');
+                tools.className = 'chart-tools';
+                let paramHtml = '';
+                if(params.length > 0) {
+                    paramHtml = `<div class="multi-select-container"><button class="multi-select-btn" onclick="toggleDropdown('${id}', event)">Parameters ▼</button><div id="dd-${id}" class="multi-select-menu" onclick="event.stopPropagation()">${params.map(p => `<label class="multi-select-item"><input type="checkbox" value="${p.key}" ${p.selected?'checked':''} onchange="updateChartMultiParams('${id}')">${p.label}</label>`).join('')}</div></div>`;
+                }
+                const switchHtml = `<div class="segment-control"><input type="radio" name="view_${id}" id="v_g_${id}" class="segment-input" checked onchange="toggleView('${id}', 'graph')"><label for="v_g_${id}" class="segment-label">Graphs</label><input type="radio" name="view_${id}" id="v_t_${id}" class="segment-input" onchange="toggleView('${id}', 'table')"><label for="v_t_${id}" class="segment-label">Table</label></div>`;
+                const zoomHtml = `<button class="chart-tool-btn" onclick="VizEngine.charts['${id}'].resetZoom()">RESET</button>`;
+                tools.innerHTML = paramHtml + switchHtml + zoomHtml;
+                wrapper.appendChild(tools);
+                const tblDiv = document.createElement('div'); tblDiv.className = 'data-table-view hidden'; tblDiv.id = id + '-tbl'; wrapper.appendChild(tblDiv);
+            }
+
+            const thead = `<thead><tr><th>Period</th>${datasets.map(d=>`<th>${d.label}</th>`).join('')}</tr></thead>`;
+            const tbody = `<tbody>${labels.map((l,i)=>`<tr><td>${l}</td>${datasets.map(d=>`<td>${typeof d.data[i]==='number'?d.data[i].toFixed(1):d.data[i]}</td>`).join('')}</tr>`).join('')}</tbody>`;
+            document.getElementById(id+'-tbl').innerHTML = `<table>${thead}${tbody}</table>`;
+
+            const ctx = document.getElementById(id).getContext('2d');
+            if(this.charts[id]) this.charts[id].destroy();
+
+            this.charts[id] = new Chart(ctx, {
+                type: type,
+                data: { labels, datasets },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    animation: !App.isTurbo,
+                    scales: {
+                        x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#666' } },
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#666' } },
+                        y1: { display: y1, position: 'right', grid: { drawOnChartArea: false }, ticks: { color: App.theme.c[2] } }
+                    },
+                    plugins: { legend: { labels: { color: '#aaa', font:{family:'JetBrains Mono'} } }, zoom: { zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' }, pan: { enabled: true, mode: 'x' } } }
+                }
+            });
+            this.charts[id].rawFilteredData = this.currentResult ? this.currentResult.filtered : [];
+            this.charts[id].customParams = params;
+        },
+
+        expand: function(id) {
+            const modal = document.getElementById('chart-modal');
+            const sourceChart = this.charts[id];
+            if(!sourceChart) return;
+            modal.classList.remove('hidden');
+            const ctx = document.getElementById('modalCanvas').getContext('2d');
+            if(App.modalChart) App.modalChart.destroy();
+            App.modalChart = new Chart(ctx, {
+                type: sourceChart.config.type,
+                data: sourceChart.data,
+                options: { responsive: true, maintainAspectRatio: false, scales: sourceChart.config.options.scales, plugins: { legend: { labels: { color: '#fff' } }, zoom: { zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' }, pan: { enabled: true, mode: 'x' } } } }
+            });
+        }
+    };
+
+    // --- PIPELINE ORCHESTRATOR ---
+    function runAnalysisPipeline() {
+        // 1. GATHER INPUTS
+        const plant = document.getElementById('plantSelector').value;
+        const start = document.getElementById('dateStart').value;
+        const end = document.getElementById('dateEnd').value;
+        const level = document.getElementById('timeLevel').value;
+        
+        // 2. STAGE 1 (Filtering)
+        const rawSubset = DataEngine.getFiltered(plant, start, end);
+        if(!rawSubset.length) return;
+
+        // 3. STAGE 2 (Calculation)
+        const result = CalcEngine.aggregate(rawSubset, level, start, end);
+
+        // 4. STAGE 3 (Visualization)
+        VizEngine.updateAll(result);
+    }
+
+    // --- UTILS & GLOBALS ---
+    const gaugePlugin = {
+        id: 'gaugeNeedle',
+        afterDatasetDraw(chart) {
+            const { ctx, data, chartArea: { width, height } } = chart;
+            const val = data.datasets[0].needleValue;
+            const max = data.datasets[0].needleMax;
+            if (val === undefined || max === undefined) return;
+            const angle = Math.PI + (Math.max(0, Math.min(1, val / max)) * Math.PI);
+            ctx.save(); ctx.translate(width / 2, chart.getDatasetMeta(0).data[0].y); ctx.rotate(angle);
+            ctx.beginPath(); ctx.moveTo(0, -3); ctx.lineTo(height / 1.5, 0); ctx.lineTo(0, 3);
+            ctx.fillStyle = App.theme.c[0]; ctx.fill();
+            ctx.beginPath(); ctx.arc(0, 0, 5, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill(); ctx.restore();
+        }
+    };
+
+    const App = { 
+        theme: { c: ['#00f3ff', '#7000ff', '#00ff9d', '#ffb800', '#ff003c'], bg: '#030508' },
+        modalChart: null, isTurbo: false, timeFormatDecimal: false
+    };
+
+    function toggleTurbo() {
+        App.isTurbo = !App.isTurbo;
+        App.isTurbo ? document.body.classList.add('turbo-mode') : document.body.classList.remove('turbo-mode');
+        const t = document.getElementById('toast-notification');
+        t.innerText = App.isTurbo ? "TURBO ENGAGED" : "VISUAL MODE"; t.classList.add('show');
+        setTimeout(()=>t.classList.remove('show'), 3000);
+    }
+
+    function toggleTimeFormat() { App.timeFormatDecimal = !App.timeFormatDecimal; runAnalysisPipeline(); }
+    function changeTheme(t) {
+        const Themes = { 'jarvis': { c: ['#00f3ff', '#7000ff', '#00ff9d', '#ffb800', '#ff003c'], bg: '#030508' }, 'veronica': { c: ['#ffb800', '#8b0000', '#ff9800', '#4caf50', '#ffffff'], bg: '#1a0500' }, 'warmachine': { c: ['#e2e8f0', '#64748b', '#94a3b8', '#ef4444', '#10b981'], bg: '#0f172a' } };
+        App.theme = Themes[t]; 
+        document.documentElement.style.setProperty('--color-primary', App.theme.c[0]); 
+        document.documentElement.style.setProperty('--color-secondary', App.theme.c[1]);
+        document.documentElement.style.setProperty('--color-success', App.theme.c[2]);
+        document.documentElement.style.setProperty('--color-warning', App.theme.c[3]);
+        document.documentElement.style.setProperty('--color-danger', App.theme.c[4]);
+        document.documentElement.style.setProperty('--bg-deep', App.theme.bg);
+        runAnalysisPipeline();
+    }
+    
+    function resetSystem() { 
+        DataEngine.db = []; document.getElementById('plantSelector').innerHTML = '<option>WAITING FOR INJECTION...</option>'; 
+        alert("System Memory Purged."); 
+    }
+
+    window.toggleView = (id, type) => {
+        const canvas = document.getElementById(id); const table = document.getElementById(id + '-tbl');
+        if(type === 'graph') { canvas.style.display = 'block'; table.classList.add('hidden'); } else { canvas.style.display = 'none'; table.classList.remove('hidden'); }
+    }
+    window.closeModal = () => document.getElementById('chart-modal').classList.add('hidden');
+    window.toggleDropdown = (id, e) => { e.stopPropagation(); document.getElementById(`dd-${id}`).classList.toggle('show'); };
+    window.closeAllDropdowns = (e) => { if(!e.target.closest('.multi-select-container')) document.querySelectorAll('.multi-select-menu').forEach(el => el.classList.remove('show')); };
+    
+    window.updateChartMultiParams = (id) => {
+        // Redraw based on VizEngine logic using cached data
+        const chart = VizEngine.charts[id];
+        if(!chart || !chart.rawFilteredData || !chart.customParams) return;
+        
+        const container = document.getElementById(`dd-${id}`);
+        const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+        const c = App.theme.c;
+        const baseDs = chart.data.datasets[0];
+        const newDs = [baseDs];
+        let useY1 = false;
+
+        checkboxes.forEach(cb => {
+            if(cb.checked) {
+                const p = chart.customParams.find(x => x.key === cb.value);
+                if(p) {
+                    let dMap = chart.rawFilteredData.map(r => r[p.key]);
+                    if(p.key === 'pr') dMap = dMap.map(x=>x*100);
+                    newDs.push({ label: p.label, data: dMap, type: 'line', borderColor: c[p.colorIdx%c.length], backgroundColor: c[p.colorIdx%c.length], yAxisID: p.yAxisID||'y' });
+                    if(p.yAxisID==='y1') useY1 = true;
+                }
+            }
+        });
+        chart.data.datasets = newDs;
+        chart.options.scales.y1.display = useY1 || (baseDs.yAxisID === 'y1');
+        chart.update();
+    };
+
+    window.switchDashboard = (v) => {
+        ['inverter','inv-matrix','transformer','meter','fault','comparison','year','report'].forEach(id => {
+            document.getElementById(`view-${id}`).classList.add('hidden'); document.getElementById(`tab-${id}`).classList.remove('active');
+        });
+        document.getElementById(`view-${v}`).classList.remove('hidden'); document.getElementById(`tab-${v}`).classList.add('active');
+        if(v === 'year') VizEngine.renderYearly();
+        if(v === 'comparison') VizEngine.renderComparisons();
+    }
+    
+    // UTILS
+    const formatDur = (m) => (!m || m < 0) ? (App.timeFormatDecimal?'0.00':'00:00') : (App.timeFormatDecimal ? (m/60).toFixed(2) : `${String(Math.floor(m/60)).padStart(2,'0')}:${String(Math.round(m%60)).padStart(2,'0')}`);
+    const minsToTime = (tm) => (!tm || isNaN(tm)) ? '--:--' : `${String(Math.floor(tm/60)).padStart(2,'0')}:${String(Math.round(tm%60)).padStart(2,'0')}`;
+
+    if(navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) toggleTurbo(); 
+</script>
+</body>
+</html>
